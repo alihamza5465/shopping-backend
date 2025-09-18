@@ -127,15 +127,17 @@ app.post("/cartitem", async (req, res) =>{
   try {
     const existID = await Cart.findOne({userID })
   if(existID){
-
+      const existProduct = await Cart.findOne({productID})
+      if(existProduct){
+        return res.status(200).json({message: "Product already exist"})}
       existID.productID.push( productID)
       
       await existID.save();
-      return res.status(200).json({ message: "Product added to cart" });
+      return res.status(200).json({ message: "Product added to cart", cart: existID });
   }
     const newCart = new Cart({userID, productID})
     await newCart.save()
-    res.status(201).json({message: "Cart Save"})
+    res.status(201).json({message: "Cart Save", cart: newCart})
   } catch (error) {
     res.status(500).json({message: error.message})
   }
