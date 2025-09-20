@@ -121,24 +121,61 @@ app.put("/api/products/:id", async (req, res) =>{
   }
 })
 
-app.post("/cartitem", async (req, res) =>{
-  const {userID, productID} = req.body;
+// app.post("/cartitem", async (req, res) =>{
+//   const {userID, productID} = req.body;
   
-  try {
-    const existID = await Cart.findOne({userID })
-  if(existID){
-      const existProduct = await Cart.findOne({productID})
-      if(existProduct){
-        return res.status(200).json({message: "Product already exist"})}
-      existID.productID.push( productID)
+//   try {
+//     const existID = await Cart.findOne({userID })
+//   if(existID){
+//       const existProduct = await Cart.findOne({productID})
+//       if(existProduct){
+//         return res.status(200).json({message: "Product already exist"})}
+//       existID.productID.push( productID)
       
-      await existID.save();
-      return res.status(200).json({ message: "Product added to cart", cart: existID });
-  }
-    const newCart = new Cart({userID, productID})
-    await newCart.save()
-    res.status(201).json({message: "Cart Save", cart: newCart})
+//       await existID.save();
+//       return res.status(200).json({ message: "Product added to cart", cart: existID });
+//   }
+//     const newCart = new Cart({userID, productID})
+//     await newCart.save()
+//     res.status(201).json({message: "Cart Save", cart: newCart})
+//   } catch (error) {
+//     res.status(500).json({message: error.message})
+//   }
+// })
+
+app.post("/cartitem", async (req, res) => {
+  const { userID, productID } = req.body;
+
+  try {
+    // find the user's cart
+    let cart = await Cart.findOne({ userID });
+
+    if (cart) {
+      // check if product already exists in user's cart
+      if (cart.productID.includes(productID)) {
+        return res.status(200).json({ message: "Product already exists in cart" });
+      }
+
+      // push product to cart
+      cart.productID.push(productID);
+      await cart.save();
+    } else {
+      // create a new cart for this user
+      cart = new Cart({ userID, productID: [productID] });
+      await cart.save();
+    }
+
+    // fetch all product details for items in the cart
+    const productsInCart = await Product.find({ _id: { $in: cart.productID } });
+
+    return res.status(200).json({
+      message: "Cart updated successfully",
+      cart: cart,
+      products: productsInCart,
+    });
+
   } catch (error) {
-    res.status(500).json({message: error.message})
+    res.status(500).json({ message: error.message });
   }
-})
+});
+
