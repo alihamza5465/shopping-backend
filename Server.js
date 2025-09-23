@@ -166,12 +166,12 @@ app.post("/cartitem", async (req, res) => {
     }
 
     // fetch all product details for items in the cart
-    const productsInCart = await Product.find({ _id: { $in: cart.productID } });
+    // const productsInCart = await Product.find({ _id: { $in: cart.productID } });
 
     return res.status(200).json({
       message: "Cart updated successfully",
-      cart: cart,
-      products: productsInCart,
+      // cart: cart,
+      // products: productsInCart,
     });
 
   } catch (error) {
@@ -179,3 +179,38 @@ app.post("/cartitem", async (req, res) => {
   }
 });
 
+app.get("/getcart", async (req, res) => {
+  const { userID } = req.query;
+  try {
+    let cart = await Cart.findOne({userID});
+    // console.log(cart)
+     const productsInCart = await Product.find({ _id: { $in: cart.productID } });
+      return res.status(200).json({
+      message: "Cart updated successfully",
+      // cart: cart,
+      products: productsInCart,
+    });
+
+  } catch (error) {
+    res.status(500).json({message: error.message})
+  }
+})
+
+app.post("/removecart", async (req, res) => {
+  const { removeID, userID } = req.body;
+
+  try {
+    // 1. Find user's cart
+    const cart = await Cart.findOne({ userID });
+    if(cart){
+      const cartID = cart.productID
+          const newCart =  cartID.filter(item => item !== removeID)
+          cart.productID = newCart;
+    await cart.save();
+    res.status(200).json({message: "update successfully ", cart})
+  }
+  } catch (error) {
+    console.error("Error removing product from cart:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
